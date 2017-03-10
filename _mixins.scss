@@ -1,0 +1,174 @@
+/* Unless said otherwise, logic is min-width */
+
+/* Hard column width */
+@function colw($n, $gutter: $gutter) {
+  @return $n * ($col + $gutter);
+}
+
+/* Strip units */
+@function strip($value) {
+  @return $value / ($value * 0 + 1);
+}
+
+/* Clamped property lerp mixin */
+@mixin clamp($properties, $min, $max, $min-vw: 480px, $max-vw: colw(12)) {
+
+  // lower value
+  @each $property in $properties {
+    #{$property}: $min;
+  }
+
+  // lerp
+  @include breakpoint($min-vw $max-vw) {
+    @each $property in $properties {
+      #{$property}: calc(#{strip($max - $min) / strip($max-vw - $min-vw)} * (100vw - #{$min-vw}) + #{$min});
+    }
+  }
+
+  // upper value
+  @include breakpoint($max-vw) {
+    @each $property in $properties {
+      #{$property}: $max;
+    }
+  }
+}
+
+/* Split props on breakpoint */
+@mixin break-prop($properties, $value-small, $value-large, $breakpoint: 640px) {
+  @each $property in $properties {
+    #{$property}: $value-small;
+  }
+
+  @include breakpoint($breakpoint) {
+    @each $property in $properties {
+      #{$property}: $value-large;
+    }
+  }
+}
+
+/* Columns mixin */
+/* stylelint-disable */
+@mixin col($columns, $context: $ncol, $margin-small: 20px, $margin-large: 30px,  $margin: true) {
+  $width: 100% / $context * $columns;
+  @include break-prop(width, calc(#{$width} - #{$margin-small}), calc(#{$width} - #{$margin-large}));
+
+  @if $margin == false {
+  }
+
+  @else if $margin == auto {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @else {
+    @include break-prop(margin-left margin-right, $margin-small / 2, $margin-large / 2);
+  }
+}
+/* stylelint-enable */
+
+/* Icon auto stroke-width */
+@mixin stroke($margin, $ncols, $min-w, $max-w) {
+
+  $native-artboard-width: 166px;
+  $native-stroke-width: 2px;
+
+  // max width of a column
+  $colw-max: $max-w / $ncols - $margin;
+  // min width of a column
+  $colw-min: $min-w / $ncols - $margin;
+
+  // stroke for larger widths
+  $stroke-max: $native-artboard-width * $native-stroke-width / $colw-max;
+  // stoke for smaller widths
+  $stroke-min: $native-artboard-width * $native-stroke-width / $colw-min;
+
+  // low value
+  stroke-width: $stroke-min;
+
+  // lerp in range
+  @include breakpoint($min-w $max-w) {
+    stroke-width: calc(#{strip($stroke-max - $stroke-min) / strip($max-w - $min-w)} * (100vw - #{$min-w}) + #{$stroke-min});
+  }
+
+  // high value
+  @include breakpoint($max-w) {
+    stroke-width: $stroke-max;
+  }
+}
+
+/* Release */
+@mixin release() {
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+}
+
+@mixin divfill($position: absolute) {
+  position: $position;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Screen reader only */
+@mixin sr-only {
+  border: 0 !important;
+  clip: rect(1px, 1px, 1px, 1px) !important;
+  clip-path: inset(50%) !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  width: 1px !important;
+  white-space: nowrap !important;
+  contain: strict;
+}
+
+@mixin aa {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@mixin no-aa {
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
+@mixin ratio($x, $y) {
+  display: block;
+  position: relative;
+
+  &::before {
+    content: '';
+    padding-bottom: percentage($y / $x);
+  }
+}
+
+/* Returns value in ems */
+@function em($value, $context: 16) {
+  @return $value / $context * 1em;
+}
+
+@mixin square($x) {
+  width: $x;
+  height: $x;
+}
+
+@mixin hover {
+  .no-touchevents &:hover {
+    @content;
+  }
+}
+
+@mixin active {
+  .touchevents &:active,
+  .no-touchevents &:active {
+    @content;
+  }
+}
+
+@mixin focus {
+  .no-touchevents &:focus {
+    @content;
+  }
+}
